@@ -56,27 +56,6 @@ export const Home: React.FC = () => {
           </Link>
         </motion.div>
       </section>
-
-      {/* Feature highlight */}
-      <section className="w-full bg-gray-900 rounded-[32px] py-32 mt-12 text-center px-4 overflow-hidden mb-12">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">Designed for clarity.</h2>
-          <p className="text-xl text-gray-400 leading-relaxed mb-12">
-            Whether you are organizing a small meetup or a massive conference, our minimal interface keeps the focus on what matters: your event.
-          </p>
-          <div className="aspect-video bg-gray-800 rounded-3xl border border-gray-700 shadow-2xl overflow-hidden relative">
-            <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/20 to-purple-500/20 mix-blend-overlay"></div>
-            {/* Abstract visual representation of dashboard */}
-            <div className="p-8 flex flex-col gap-6 h-full opacity-50">
-              <div className="h-12 w-full max-w-md bg-gray-700 rounded-xl"></div>
-              <div className="flex gap-6 flex-1">
-                <div className="w-1/3 bg-gray-700 rounded-2xl hidden md:block"></div>
-                <div className="flex-1 bg-gray-700 rounded-2xl"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
     </div>
   );
 };
