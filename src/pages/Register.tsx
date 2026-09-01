@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ChevronDown } from 'lucide-react';
+import { CalendarDays, FolderOpen } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+
+const ROLE_OPTIONS = [
+  { value: 'user', label: 'Attend Events', description: 'Browse and join events', icon: CalendarDays },
+  { value: 'organizer', label: 'Organize Events', description: 'Create and manage events', icon: FolderOpen },
+] as const;
 
 export const Register: React.FC = () => {
   const navigate = useNavigate();
@@ -73,16 +78,34 @@ export const Register: React.FC = () => {
           </div>
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-2">I want to...</label>
-            <div className="relative">
-              <select
-                value={formData.role}
-                onChange={e => setFormData({...formData, role: e.target.value})}
-                className="w-full appearance-none px-4 py-3 pr-11 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium text-gray-900 cursor-pointer"
-              >
-                <option value="user">Attend Events</option>
-                <option value="organizer">Organize Events</option>
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {ROLE_OPTIONS.map(({ value, label, description, icon: Icon }) => {
+                const selected = formData.role === value;
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, role: value })}
+                    className={`flex flex-col items-start gap-2 p-4 rounded-2xl border-2 text-left transition-all ${
+                      selected
+                        ? 'border-indigo-600 bg-indigo-50 shadow-sm'
+                        : 'border-gray-200 bg-gray-50 hover:border-gray-300 hover:bg-white'
+                    }`}
+                  >
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                      selected ? 'bg-indigo-600 text-white' : 'bg-white text-gray-500 border border-gray-200'
+                    }`}>
+                      <Icon className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className={`font-bold text-sm ${selected ? 'text-indigo-900' : 'text-gray-900'}`}>
+                        {label}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-0.5">{description}</div>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
           <button 

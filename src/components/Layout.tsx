@@ -26,15 +26,17 @@ export const Layout: React.FC = () => {
           </Link>
           
           <nav className="space-y-2">
-            <Link 
-              to="/dashboard" 
-              className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-semibold transition-colors ${
-                isActive('/dashboard') ? 'bg-indigo-50 text-indigo-700' : 'text-gray-500 hover:bg-gray-50'
-              }`}
-            >
-              <LayoutDashboard className="w-5 h-5" />
-              Dashboard
-            </Link>
+            {user && (
+              <Link 
+                to="/dashboard" 
+                className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-semibold transition-colors ${
+                  isActive('/dashboard') ? 'bg-indigo-50 text-indigo-700' : 'text-gray-500 hover:bg-gray-50'
+                }`}
+              >
+                <LayoutDashboard className="w-5 h-5" />
+                Dashboard
+              </Link>
+            )}
             {user?.role === 'user' && (
               <>
                 <Link
