@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { ChevronDown } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export const Register: React.FC = () => {
@@ -47,7 +48,7 @@ export const Register: React.FC = () => {
               required
               value={formData.name}
               onChange={e => setFormData({...formData, name: e.target.value})}
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium"
+              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium text-gray-900"
             />
           </div>
           <div>
@@ -57,7 +58,7 @@ export const Register: React.FC = () => {
               required
               value={formData.email}
               onChange={e => setFormData({...formData, email: e.target.value})}
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium"
+              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium text-gray-900"
             />
           </div>
           <div>
@@ -67,19 +68,22 @@ export const Register: React.FC = () => {
               required
               value={formData.password}
               onChange={e => setFormData({...formData, password: e.target.value})}
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium"
+              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium text-gray-900"
             />
           </div>
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-2">I want to...</label>
-            <select
-              value={formData.role}
-              onChange={e => setFormData({...formData, role: e.target.value})}
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium appearance-none"
-            >
-              <option value="user">Attend Events</option>
-              <option value="organizer">Organize Events</option>
-            </select>
+            <div className="relative">
+              <select
+                value={formData.role}
+                onChange={e => setFormData({...formData, role: e.target.value})}
+                className="w-full appearance-none px-4 py-3 pr-11 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium text-gray-900 cursor-pointer"
+              >
+                <option value="user">Attend Events</option>
+                <option value="organizer">Organize Events</option>
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            </div>
           </div>
           <button 
             type="submit" 
