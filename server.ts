@@ -16,6 +16,21 @@ const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://sdp:sdpsdp@cluster
 const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret_key_for_dev_only";
 const PORT = Number(process.env.PORT) || 3000;
 
+if (!process.env.NODE_ENV && process.env.PORT) {
+  process.env.NODE_ENV = "production";
+}
+
+function connectDatabase() {
+  mongoose.connect(MONGODB_URI, {
+    family: 4,
+    serverSelectionTimeoutMS: 10000,
+  }).then(() => {
+    console.log("Connected to MongoDB");
+  }).catch((error: any) => {
+    console.error("MongoDB connection error:", error.message || error);
+  });
+}
+
 // -------------------------------------------------------------
 // Models
 // -------------------------------------------------------------
@@ -81,29 +96,12 @@ async function startServer() {
     res.json({
       ok: true,
       env: process.env.NODE_ENV || "development",
+      port: PORT,
       db: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
     });
   });
 
-  // Connect to DB
-  try {
-    await mongoose.connect(MONGODB_URI, {
-      family: 4,
-      serverSelectionTimeoutMS: 15000,
-    });
-    console.log("Connected to MongoDB");
-  } catch (error: any) {
-    console.error("MongoDB connection error:", error.message || error);
-    const servers = error?.reason?.servers;
-    if (servers instanceof Map) {
-      for (const [host, desc] of servers) {
-        const reason = desc?.error?.message || desc?.error || "no handshake";
-        console.error(`  ${host}: ${reason}`);
-      }
-    }
-    console.error("ECONNREFUSED means this Mac/network is blocking port 27017 (firewall, VPN, or iCloud Private Relay) — not a wrong database URI.");
-    console.error("Try: turn off VPN and iCloud Private Relay, then retry on a phone hotspot.");
-  }
+  connectDatabase();
 
   // -------------------------------------------------------------
   // Middleware
@@ -1062,10 +1060,14 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = path.join(process.cwd(), "dist");
-    app.use(express.static(distPath));
+    const staticRoot = path.dirname(process.argv[1] || path.join(process.cwd(), "dist"));
+    console.log(`Serving static files from: ${staticRoot}`);
+    app.use(express.static(staticRoot));
     app.get("*", (req, res) => {
-      res.sendFile(path.join(distPath, "index.html"));
+      if (req.path.startsWith("/api")) {
+        return res.status(404).json({ error: "Not found" });
+      }
+      res.sendFile(path.join(staticRoot, "index.html"));
     });
   }
 
