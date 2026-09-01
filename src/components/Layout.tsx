@@ -21,7 +21,7 @@ export const Layout: React.FC = () => {
       {/* Sidebar for desktop */}
       <aside className="hidden md:flex w-64 bg-white rounded-[32px] shadow-sm border border-gray-100 p-8 flex-col justify-between">
         <div>
-          <Link to="/" className="flex items-center mb-10 group">
+          <Link to="/" className="flex items-center justify-center mb-10 group w-full">
             <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-lg tracking-tight transition-transform group-hover:scale-105">EM</div>
           </Link>
           
@@ -170,8 +170,8 @@ export const Layout: React.FC = () => {
       {/* Main Content */}
       <main className="flex-1 flex flex-col h-full overflow-y-auto rounded-[32px] md:pr-4">
         {/* Mobile Header */}
-        <header className="md:hidden flex justify-between items-center mb-6 bg-white p-4 rounded-3xl shadow-sm border border-gray-100 shrink-0">
-          <Link to="/" className="flex items-center">
+        <header className="md:hidden relative flex justify-end items-center mb-6 bg-white p-4 rounded-3xl shadow-sm border border-gray-100 shrink-0">
+          <Link to="/" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center">
             <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-sm tracking-tight">EM</div>
           </Link>
           <div className="flex gap-4">
