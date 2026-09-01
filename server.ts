@@ -2,7 +2,6 @@ import "dotenv/config";
 import dns from "dns";
 import express from "express";
 import path from "path";
-import { createServer as createViteServer } from "vite";
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -77,6 +76,14 @@ async function startServer() {
   const app = express();
 
   app.use(express.json());
+
+  app.get("/api/health", (_req, res) => {
+    res.json({
+      ok: true,
+      env: process.env.NODE_ENV || "development",
+      db: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
+    });
+  });
 
   // Connect to DB
   try {
@@ -1048,6 +1055,7 @@ async function startServer() {
   // Vite Middleware for Frontend
   // -------------------------------------------------------------
   if (process.env.NODE_ENV !== "production") {
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true, host: true, allowedHosts: true },
       appType: "spa",
@@ -1062,8 +1070,11 @@ async function startServer() {
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`EventHive running on http://localhost:${PORT}`);
+    console.log(`EventHive running on http://0.0.0.0:${PORT}`);
   });
 }
 
-startServer();
+startServer().catch((error) => {
+  console.error("Failed to start server:", error);
+  process.exit(1);
+});
