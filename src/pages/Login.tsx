@@ -24,7 +24,7 @@ export const Login: React.FC = () => {
       if (!res.ok) throw new Error(data.error || 'Login failed');
       
       login(data.token, data.user);
-      navigate('/dashboard');
+      navigate(data.user.role === 'admin' ? '/admin' : '/dashboard');
     } catch (err: any) {
       setError(err.message);
     } finally {

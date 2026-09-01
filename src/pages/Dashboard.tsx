@@ -32,6 +32,10 @@ export const Dashboard: React.FC = () => {
       navigate('/login');
       return;
     }
+    if (user.role === 'admin') {
+      navigate('/admin');
+      return;
+    }
     fetchDashboardData();
   }, [user, navigate]);
 

@@ -2,11 +2,13 @@ export interface User {
   _id: string;
   name: string;
   email: string;
-  role: 'user' | 'organizer';
+  role: 'user' | 'organizer' | 'admin';
+  isActive?: boolean;
   bio?: string;
   website?: string;
   linkedin?: string;
   bkashNumber?: string;
+  createdAt?: string;
 }
 
 export type RegistrationStatusType = 'none' | 'pending' | 'approved' | 'rejected';
@@ -26,6 +28,7 @@ export interface Event {
   price?: number;
   organizer: User;
   attendees: User[] | string[];
+  isActive?: boolean;
   registrationStatus?: RegistrationStatusType;
   isSaved?: boolean;
 }
@@ -108,4 +111,18 @@ export interface OrganizerOverview {
 export interface AttendeeEntry {
   attendee: Pick<User, '_id' | 'name' | 'email'>;
   event: Pick<Event, '_id' | 'name' | 'date' | 'time'>;
+}
+
+export interface AdminStats {
+  totalUsers: number;
+  organizers: number;
+  participants: number;
+  totalEvents: number;
+  activeEvents: number;
+  inactiveUsers: number;
+  inactiveEvents: number;
+}
+
+export interface AdminOverview {
+  stats: AdminStats;
 }

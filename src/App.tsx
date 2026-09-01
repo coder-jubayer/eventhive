@@ -23,6 +23,7 @@ import { MySchedule } from './pages/MySchedule';
 import { MyTickets } from './pages/MyTickets';
 import { MyPayments } from './pages/MyPayments';
 import { SavedEvents } from './pages/SavedEvents';
+import { AdminDashboard } from './pages/AdminDashboard';
 
 export default function App() {
   return (
@@ -37,6 +38,7 @@ export default function App() {
             <Route path="events/create" element={<CreateEvent />} />
             <Route path="events/:id/edit" element={<CreateEvent />} />
             <Route path="dashboard" element={<Dashboard />} />
+            <Route path="admin" element={<AdminDashboard />} />
             <Route path="my-events" element={<MyEvents />} />
             <Route path="attendees" element={<Attendees />} />
             <Route path="payments" element={<PendingPayments />} />

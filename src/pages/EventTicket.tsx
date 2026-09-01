@@ -98,29 +98,28 @@ export const EventTicket: React.FC = () => {
 
           <div className="space-y-4 text-sm">
             <div className="flex items-center gap-3 text-gray-700">
-              <Calendar className="w-4 h-4 text-gray-400" />
+              <Calendar className="w-4 h-4 text-gray-400 shrink-0" />
               {format(new Date(event.date), 'EEEE, MMMM do, yyyy')}
             </div>
             <div className="flex items-center gap-3 text-gray-700">
-              <Clock className="w-4 h-4 text-gray-400" />
+              <Clock className="w-4 h-4 text-gray-400 shrink-0" />
               {event.time}
             </div>
             <div className="flex items-center gap-3 text-gray-700">
-              <MapPin className="w-4 h-4 text-gray-400" />
+              <MapPin className="w-4 h-4 text-gray-400 shrink-0" />
               {event.location}
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-3 mt-6">
-            <a
-              href={getGoogleCalendarUrl(event)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-100 transition-colors"
-            >
-              <CalendarPlus className="w-4 h-4" /> Google Calendar
-            </a>
-          </div>
+          <a
+            href={getGoogleCalendarUrl(event)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-6 w-full inline-flex items-center justify-center gap-2 px-5 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-sm font-bold transition-colors shadow-md shadow-indigo-600/20"
+          >
+            <CalendarPlus className="w-5 h-5" />
+            Add to Google Calendar
+          </a>
 
           <div className="mt-6 pt-6 border-t border-gray-100 text-sm text-gray-500">
             {isPaid && registration.payment && (

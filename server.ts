@@ -25,8 +25,13 @@ function connectDatabase() {
   mongoose.connect(MONGODB_URI, {
     family: 4,
     serverSelectionTimeoutMS: 10000,
-  }).then(() => {
+  }).then(async () => {
     console.log("Connected to MongoDB");
+    try {
+      await ensureAdminUser();
+    } catch (error: any) {
+      console.error("Admin seed error:", error.message || error);
+    }
   }).catch((error: any) => {
     console.error("MongoDB connection error:", error.message || error);
   });
@@ -55,7 +60,8 @@ const UserSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  role: { type: String, enum: ['user', 'organizer'], default: 'user' },
+  role: { type: String, enum: ['user', 'organizer', 'admin'], default: 'user' },
+  isActive: { type: Boolean, default: true },
   bio: { type: String, default: '' },
   website: { type: String, default: '' },
   linkedin: { type: String, default: '' },
@@ -75,7 +81,8 @@ const EventSchema = new mongoose.Schema({
   isPaid: { type: Boolean, default: false },
   price: { type: Number, default: 0 },
   organizer: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  attendees: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
+  attendees: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  isActive: { type: Boolean, default: true },
 }, { timestamps: true });
 
 const PaymentRequestSchema = new mongoose.Schema({
@@ -102,6 +109,37 @@ const Event = mongoose.model('Event', EventSchema);
 const PaymentRequest = mongoose.model('PaymentRequest', PaymentRequestSchema);
 const SavedEvent = mongoose.model('SavedEvent', SavedEventSchema);
 
+const ADMIN_EMAIL = 'admin@gmail.com';
+const ADMIN_PASSWORD = 'admin123';
+
+async function ensureAdminUser() {
+  await User.updateMany({ isActive: { $exists: false } }, { $set: { isActive: true } });
+  await Event.updateMany({ isActive: { $exists: false } }, { $set: { isActive: true } });
+
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(ADMIN_PASSWORD, salt);
+  const existing = await User.findOne({ email: ADMIN_EMAIL });
+
+  if (!existing) {
+    await User.create({
+      name: 'Administrator',
+      email: ADMIN_EMAIL,
+      password: hashedPassword,
+      role: 'admin',
+      isActive: true,
+    });
+    console.log('Default admin account created (admin@gmail.com)');
+    return;
+  }
+
+  existing.role = 'admin';
+  existing.isActive = true;
+  existing.password = hashedPassword;
+  await existing.save();
+}
+
+const activeOnly = { $ne: false };
+
 async function startServer() {
   const app = express();
 
@@ -124,14 +162,19 @@ async function startServer() {
   // -------------------------------------------------------------
   // Middleware
   // -------------------------------------------------------------
-  const auth = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const auth = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const token = req.header('Authorization')?.replace('Bearer ', '');
     if (!token) return res.status(401).json({ error: 'Access denied. No token provided.' });
     try {
-      const decoded = jwt.verify(token, JWT_SECRET) as { userId: string, role: string };
-      (req as any).user = decoded;
+      const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; role: string };
+      const user = await User.findById(decoded.userId).select('_id role isActive');
+      if (!user) return res.status(401).json({ error: 'User not found.' });
+      if (user.isActive === false) {
+        return res.status(403).json({ error: 'Your account has been deactivated.' });
+      }
+      (req as any).user = { userId: user._id.toString(), role: user.role };
       next();
-    } catch (ex) {
+    } catch {
       res.status(400).json({ error: 'Invalid token.' });
     }
   };
@@ -139,6 +182,13 @@ async function startServer() {
   const requireOrganizer = (req: express.Request, res: express.Response, next: express.NextFunction) => {
     if ((req as any).user.role !== 'organizer') {
       return res.status(403).json({ error: 'Organizer access only.' });
+    }
+    next();
+  };
+
+  const requireAdmin = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if ((req as any).user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access only.' });
     }
     next();
   };
@@ -183,6 +233,9 @@ async function startServer() {
   app.post('/api/auth/register', async (req, res) => {
     try {
       const { name, email, password, role } = req.body;
+      if (role === 'admin') {
+        return res.status(400).json({ error: 'Invalid registration role.' });
+      }
       const existingUser = await User.findOne({ email });
       if (existingUser) return res.status(400).json({ error: 'Email already registered.' });
 
@@ -193,7 +246,10 @@ async function startServer() {
       await user.save();
 
       const token = jwt.sign({ userId: user._id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
-      res.status(201).json({ token, user: { _id: user._id, name: user.name, email: user.email, role: user.role } });
+      res.status(201).json({
+        token,
+        user: { _id: user._id, name: user.name, email: user.email, role: user.role, isActive: user.isActive },
+      });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
@@ -207,9 +263,15 @@ async function startServer() {
 
       const validPassword = await bcrypt.compare(password, user.password);
       if (!validPassword) return res.status(400).json({ error: 'Invalid email or password.' });
+      if (user.isActive === false) {
+        return res.status(403).json({ error: 'Your account has been deactivated. Contact an administrator.' });
+      }
 
       const token = jwt.sign({ userId: user._id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
-      res.json({ token, user: { _id: user._id, name: user.name, email: user.email, role: user.role } });
+      res.json({
+        token,
+        user: { _id: user._id, name: user.name, email: user.email, role: user.role, isActive: user.isActive },
+      });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
@@ -229,7 +291,7 @@ async function startServer() {
   app.get('/api/events', optionalAuth, async (req, res) => {
     try {
       const { search, category, priceType, sort } = req.query;
-      const query: Record<string, unknown> = {};
+      const query: Record<string, unknown> = { isActive: activeOnly };
       if (search) {
         query.name = { $regex: search as string, $options: 'i' };
       }
@@ -294,6 +356,9 @@ async function startServer() {
         .populate('organizer', organizerFields)
         .populate('attendees', 'name email');
       if (!event) return res.status(404).json({ error: 'Event not found' });
+      if (event.isActive === false && (req as any).user?.role !== 'admin') {
+        return res.status(404).json({ error: 'Event not found' });
+      }
 
       const payload: any = event.toObject();
       const user = (req as any).user;
@@ -466,6 +531,9 @@ async function startServer() {
       const { userId } = (req as any).user;
       const event = await Event.findById(req.params.id).populate('organizer', organizerFields);
       if (!event) return res.status(404).json({ error: 'Event not found' });
+      if (event.isActive === false) {
+        return res.status(400).json({ error: 'This event is no longer available.' });
+      }
 
       if (event.attendees.some((id) => id.toString() === userId)) {
         return res.status(400).json({ error: 'Already registered for this event.' });
@@ -820,7 +888,7 @@ async function startServer() {
         return res.status(404).json({ error: 'Organizer not found' });
       }
 
-      const events = await Event.find({ organizer: organizer._id })
+      const events = await Event.find({ organizer: organizer._id, isActive: activeOnly })
         .populate('organizer', organizerFields)
         .sort({ date: 1 });
 
@@ -1062,6 +1130,123 @@ async function startServer() {
           role: user.role,
         },
       });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // -------------------------------------------------------------
+  // Admin Routes
+  // -------------------------------------------------------------
+  app.get('/api/admin/overview', auth, requireAdmin, async (_req, res) => {
+    try {
+      const [totalUsers, organizers, participants, totalEvents, activeEvents, inactiveUsers, inactiveEvents] = await Promise.all([
+        User.countDocuments({ role: { $ne: 'admin' } }),
+        User.countDocuments({ role: 'organizer' }),
+        User.countDocuments({ role: 'user' }),
+        Event.countDocuments(),
+        Event.countDocuments({ isActive: activeOnly }),
+        User.countDocuments({ role: { $ne: 'admin' }, isActive: false }),
+        Event.countDocuments({ isActive: false }),
+      ]);
+
+      res.json({
+        stats: {
+          totalUsers,
+          organizers,
+          participants,
+          totalEvents,
+          activeEvents,
+          inactiveUsers,
+          inactiveEvents,
+        },
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get('/api/admin/users', auth, requireAdmin, async (req, res) => {
+    try {
+      const { role, search, status } = req.query;
+      const query: Record<string, unknown> = { role: { $ne: 'admin' } };
+
+      if (role === 'organizer' || role === 'user') {
+        query.role = role;
+      }
+      if (status === 'active') query.isActive = activeOnly;
+      if (status === 'inactive') query.isActive = false;
+      if (search) {
+        query.$or = [
+          { name: { $regex: search as string, $options: 'i' } },
+          { email: { $regex: search as string, $options: 'i' } },
+        ];
+      }
+
+      const users = await User.find(query).select('-password').sort({ createdAt: -1 });
+      res.json(users);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.patch('/api/admin/users/:id/active', auth, requireAdmin, async (req, res) => {
+    try {
+      const { isActive } = req.body;
+      const target = await User.findById(req.params.id);
+      if (!target) return res.status(404).json({ error: 'User not found' });
+      if (target.role === 'admin') {
+        return res.status(400).json({ error: 'Admin accounts cannot be deactivated.' });
+      }
+
+      target.isActive = Boolean(isActive);
+      await target.save();
+
+      res.json({
+        user: {
+          _id: target._id,
+          name: target.name,
+          email: target.email,
+          role: target.role,
+          isActive: target.isActive,
+        },
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get('/api/admin/events', auth, requireAdmin, async (req, res) => {
+    try {
+      const { search, status } = req.query;
+      const query: Record<string, unknown> = {};
+
+      if (status === 'active') query.isActive = activeOnly;
+      if (status === 'inactive') query.isActive = false;
+      if (search) {
+        query.name = { $regex: search as string, $options: 'i' };
+      }
+
+      const events = await Event.find(query)
+        .populate('organizer', 'name email role')
+        .sort({ createdAt: -1 });
+
+      res.json(events);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.patch('/api/admin/events/:id/active', auth, requireAdmin, async (req, res) => {
+    try {
+      const { isActive } = req.body;
+      const event = await Event.findById(req.params.id).populate('organizer', 'name email role');
+      if (!event) return res.status(404).json({ error: 'Event not found' });
+
+      event.isActive = Boolean(isActive);
+      await event.save();
+
+      res.json({ event });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }

@@ -1,8 +1,8 @@
 import React from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { CalendarDays, LayoutDashboard, User, FolderOpen, Users, CreditCard, Ticket, Heart, Clock, LogOut } from 'lucide-react';
-import { motion } from 'motion/react';
+import { CalendarDays, LayoutDashboard, User, FolderOpen, Users, CreditCard, Ticket, Heart, Clock, LogOut, Shield } from 'lucide-react';
+import { Logo } from './Logo';
 
 export const Layout: React.FC = () => {
   const { user, logout } = useAuth();
@@ -22,19 +22,20 @@ export const Layout: React.FC = () => {
       <aside className="hidden md:flex w-64 bg-white rounded-[32px] shadow-sm border border-gray-100 p-8 flex-col justify-between">
         <div>
           <Link to="/" className="flex items-center justify-center mb-10 group w-full">
-            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-lg tracking-tight transition-transform group-hover:scale-105">EM</div>
+            <Logo size="lg" className="transition-transform group-hover:scale-105" />
           </Link>
           
           <nav className="space-y-2">
             {user && (
               <Link 
-                to="/dashboard" 
+                to={user.role === 'admin' ? '/admin' : '/dashboard'} 
                 className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-semibold transition-colors ${
-                  isActive('/dashboard') ? 'bg-indigo-50 text-indigo-700' : 'text-gray-500 hover:bg-gray-50'
+                  (user.role === 'admin' ? isActive('/admin') : isActive('/dashboard'))
+                    ? 'bg-indigo-50 text-indigo-700' : 'text-gray-500 hover:bg-gray-50'
                 }`}
               >
-                <LayoutDashboard className="w-5 h-5" />
-                Dashboard
+                {user.role === 'admin' ? <Shield className="w-5 h-5" /> : <LayoutDashboard className="w-5 h-5" />}
+                {user.role === 'admin' ? 'Admin Panel' : 'Dashboard'}
               </Link>
             )}
             {user?.role === 'user' && (
@@ -174,15 +175,15 @@ export const Layout: React.FC = () => {
         {/* Mobile Header */}
         <header className="md:hidden relative flex justify-end items-center mb-6 bg-white p-4 rounded-3xl shadow-sm border border-gray-100 shrink-0">
           <Link to="/" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center">
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-sm tracking-tight">EM</div>
+            <Logo size="sm" />
           </Link>
           <div className="flex gap-4">
             <Link to="/events" className="text-gray-500">
                <CalendarDays className="w-6 h-6" />
             </Link>
             {user ? (
-              <Link to="/dashboard" className="text-gray-500">
-                <LayoutDashboard className="w-6 h-6" />
+              <Link to={user.role === 'admin' ? '/admin' : '/dashboard'} className="text-gray-500">
+                {user.role === 'admin' ? <Shield className="w-6 h-6" /> : <LayoutDashboard className="w-6 h-6" />}
               </Link>
             ) : (
               <Link to="/login" className="text-gray-500">
