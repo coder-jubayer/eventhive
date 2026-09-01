@@ -1,5 +1,6 @@
 import "dotenv/config";
 import dns from "dns";
+import fs from "fs";
 import express from "express";
 import path from "path";
 import mongoose from "mongoose";
@@ -29,6 +30,20 @@ function connectDatabase() {
   }).catch((error: any) => {
     console.error("MongoDB connection error:", error.message || error);
   });
+}
+
+function resolveStaticRoot() {
+  const candidates = [
+    path.join(process.cwd(), "dist"),
+    path.dirname(process.argv[1] || ""),
+    path.join(path.dirname(process.argv[1] || ""), "dist"),
+  ];
+  for (const candidate of candidates) {
+    if (fs.existsSync(path.join(candidate, "index.html"))) {
+      return candidate;
+    }
+  }
+  return path.join(process.cwd(), "dist");
 }
 
 // -------------------------------------------------------------
@@ -93,11 +108,14 @@ async function startServer() {
   app.use(express.json());
 
   app.get("/api/health", (_req, res) => {
+    const staticRoot = process.env.NODE_ENV === "production" ? resolveStaticRoot() : null;
     res.json({
       ok: true,
       env: process.env.NODE_ENV || "development",
       port: PORT,
       db: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
+      staticRoot,
+      hasIndex: staticRoot ? fs.existsSync(path.join(staticRoot, "index.html")) : null,
     });
   });
 
@@ -1060,14 +1078,17 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    const staticRoot = path.dirname(process.argv[1] || path.join(process.cwd(), "dist"));
+    const staticRoot = resolveStaticRoot();
+    const indexPath = path.join(staticRoot, "index.html");
     console.log(`Serving static files from: ${staticRoot}`);
     app.use(express.static(staticRoot));
-    app.get("*", (req, res) => {
-      if (req.path.startsWith("/api")) {
-        return res.status(404).json({ error: "Not found" });
-      }
-      res.sendFile(path.join(staticRoot, "index.html"));
+    app.get(/^\/(?!api).*/, (_req, res) => {
+      res.sendFile(indexPath, (err) => {
+        if (err) {
+          console.error("Failed to send index.html:", err.message);
+          res.status(500).send("Frontend build not found. Run npm run build.");
+        }
+      });
     });
   }
 
