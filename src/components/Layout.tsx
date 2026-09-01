@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { CalendarDays, LayoutDashboard, User, FolderOpen, Users, CreditCard, Ticket, Heart, Clock, LogOut, Shield } from 'lucide-react';
+import { CalendarDays, LayoutDashboard, User, FolderOpen, Users, CreditCard, Ticket, Heart, Clock, LogOut } from 'lucide-react';
 import { Logo } from './Logo';
 
 export const Layout: React.FC = () => {
@@ -34,8 +34,8 @@ export const Layout: React.FC = () => {
                     ? 'bg-indigo-50 text-indigo-700' : 'text-gray-500 hover:bg-gray-50'
                 }`}
               >
-                {user.role === 'admin' ? <Shield className="w-5 h-5" /> : <LayoutDashboard className="w-5 h-5" />}
-                {user.role === 'admin' ? 'Admin Panel' : 'Dashboard'}
+                {user.role === 'admin' ? <Users className="w-5 h-5" /> : <LayoutDashboard className="w-5 h-5" />}
+                {user.role === 'admin' ? 'Users' : 'Dashboard'}
               </Link>
             )}
             {user?.role === 'user' && (
@@ -138,16 +138,18 @@ export const Layout: React.FC = () => {
           <div className="pt-6 border-t border-gray-100 space-y-3">
             <Link
               to="/profile"
-              className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-semibold transition-colors ${
-                isActive('/profile') ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700 hover:bg-gray-50'
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-bold border transition-colors ${
+                isActive('/profile')
+                  ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-600/20'
+                  : 'bg-white text-gray-700 border-gray-200 hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-700'
               }`}
             >
               <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold uppercase shrink-0 ${
-                isActive('/profile') ? 'bg-indigo-200 text-indigo-800' : 'bg-indigo-100 text-indigo-700'
+                isActive('/profile') ? 'bg-white/20 text-white' : 'bg-indigo-100 text-indigo-700'
               }`}>
                 {user.name.charAt(0)}
               </div>
-              <span className="truncate">{user.name}</span>
+              <span className="truncate flex-1 text-left">{user.name}</span>
             </Link>
             <button
               type="button"
@@ -183,7 +185,7 @@ export const Layout: React.FC = () => {
             </Link>
             {user ? (
               <Link to={user.role === 'admin' ? '/admin' : '/dashboard'} className="text-gray-500">
-                {user.role === 'admin' ? <Shield className="w-6 h-6" /> : <LayoutDashboard className="w-6 h-6" />}
+                {user.role === 'admin' ? <Users className="w-6 h-6" /> : <LayoutDashboard className="w-6 h-6" />}
               </Link>
             ) : (
               <Link to="/login" className="text-gray-500">

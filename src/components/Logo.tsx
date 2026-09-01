@@ -16,6 +16,6 @@ export const Logo: React.FC<LogoProps> = ({ size = 'md', className = '' }) => (
   <img
     src="/eventhive-logo.png"
     alt="EventHive"
-    className={`${SIZES[size]} w-auto object-contain ${className}`}
+    className={`${SIZES[size]} w-auto max-w-full object-contain mx-auto block ${className}`}
   />
 );
